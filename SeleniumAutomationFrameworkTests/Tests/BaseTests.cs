@@ -1,8 +1,11 @@
 ﻿using CommonLibs.Implementation;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
 using NUnit.Framework;
 using SeleniumAutomationFrameworkApplication.Pages;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,15 +15,32 @@ namespace SeleniumAutomationFrameworkTests.Tests
     public class BaseTests
     {
         public CommonDriver commonDriver;
-        readonly string url = "https://demo.guru99.com/v4";
 
         public LoginPage loginPage;
+
+        private IConfigurationRoot _configuration;
+
+        string url;
+        string currentProjectDirectory;
+
+        [OneTimeSetUp]
+        public void PreSetup()
+        {
+            string workingDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            currentProjectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
+            _configuration = new ConfigurationBuilder().AddJsonFile(currentProjectDirectory + "/config/appSettings.json").Build();
+        }
 
         [SetUp]
         public void Setup()
         {
-            commonDriver = new CommonDriver("chrome");
+            string browserType = _configuration["browserType"];
+            commonDriver = new CommonDriver(browserType);
+
+            url = _configuration["baseUrl"];
+            TestContext.Progress.WriteLine("URL: " + url);
             commonDriver.NavigateToFirstUrl(url);
+
             loginPage = new LoginPage(commonDriver.Driver);
         }
 
