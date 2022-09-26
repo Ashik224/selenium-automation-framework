@@ -1,4 +1,6 @@
-﻿using CommonLibs.Implementation;
+﻿using AventStack.ExtentReports;
+using CommonLibs.Implementation;
+using CommonLibs.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using NUnit.Framework;
@@ -20,6 +22,11 @@ namespace SeleniumAutomationFrameworkTests.Tests
 
         private IConfigurationRoot _configuration;
 
+        public ExtentReportUtils extentReportUtils;
+
+        string reportFileName;
+        string currentSolutionDirectory;
+
         string url;
         string currentProjectDirectory;
 
@@ -28,15 +35,23 @@ namespace SeleniumAutomationFrameworkTests.Tests
         {
             string workingDirectory = AppDomain.CurrentDomain.BaseDirectory;
             currentProjectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
+            currentSolutionDirectory = Directory.GetParent(workingDirectory).Parent.Parent.Parent.FullName;
+
+            TestContext.Progress.WriteLine("Sol: "+ currentSolutionDirectory);
+            reportFileName = currentSolutionDirectory + "/reports/TestReport.html";
+
+            extentReportUtils = new ExtentReportUtils(reportFileName);
             _configuration = new ConfigurationBuilder().AddJsonFile(currentProjectDirectory + "/config/appSettings.json").Build();
         }
 
         [SetUp]
         public void Setup()
         {
+            extentReportUtils.CreateATestCase("Setup");
             string browserType = _configuration["browserType"];
             commonDriver = new CommonDriver(browserType);
 
+            extentReportUtils.AddTestLog(Status.Info, "Browser Type: " + browserType);
             url = _configuration["baseUrl"];
             TestContext.Progress.WriteLine("URL: " + url);
             commonDriver.NavigateToFirstUrl(url);
@@ -48,6 +63,12 @@ namespace SeleniumAutomationFrameworkTests.Tests
         public void TearDown()
         {
             commonDriver.CloseAllBrower();
+        }
+
+        [OneTimeTearDown]
+        public void PostCleanup()
+        {
+            extentReportUtils.FlushReport();
         }
     }
 }
